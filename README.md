@@ -13,8 +13,8 @@ For the full report click <i><u>[here](https://rpubs.com/BenAY/gender-well-being
 
 <b> TLDR; </b>
 <ul>
-<li>The three genders present in the survey were male, female and gender queer/ non binary</li>
-<li>Gender and meeting/ conference self-effiacy during the PhD did not differ between the genders</li>
+<li>The three genders present in the survey were male, female and gender queer/ non binary.</li>
+<li>Gender and meeting/ conference self-effiacy during the PhD did not differ between the genders.</li>
 <li>Only females were more likely to be bullied than males.</li>
 </ul>
 
