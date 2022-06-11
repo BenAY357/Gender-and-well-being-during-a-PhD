@@ -1,0 +1,566 @@
+---
+title: "Gender and Well-being during a PhD"
+output:
+  html_document: default
+  word_document: default
+  pdf_document: default
+---
+
+```{r echo = F, setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r echo = F, warning = F, message=F}
+# Knit the file to see the report. 
+```
+
+
+
+**Research Justification**
+
+<p style="line-height: 2em;"> 
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Well-being is important (Slade, 2010). People with higher self-efficacy tend to have higher levels of well-being (Cattelino et al., 2021; Karademas, 2006; Milam et al., 2019). Previous research suggests that academic self-efficacy is higher in female undergraduates than in male undergraduates (Sachitra and Bandara, 2017). Thus, it is important to determine whether there is a gender difference in PhD students’ meeting and conference self-efficacy. Bullying is also known to harm well-being (Arslan et al., 2021; Thomas et al., 2016). Previous research indicates that women are more likely to experience bullying than men in a medical setting (Averbuch et al., 2021). We want to know if this gender disparity generalises to PhD courses. Previous research into gender and well-being often fails to include gender queer and non-binary people, so our research will take them into account. In this analysis, males will include trans-males and females will include trans-females. All our data will be taken from the “Nature Research Group PhD Student Survey 2019”.     
+</p>
+
+
+```{r echo = F, message=FALSE, warning = FALSE}
+data <- read.csv("phd_data_final3.csv")
+library("tidyverse")
+library("ggpubr")
+library("lsr")
+library("car")
+library("rstatix")
+library("datarium")
+library("irr")
+library("ez")
+library("FSA")
+library("weights")
+library("data.table")
+```
+
+# Study 1: Gender and meeting/ conference self-efficacy during a PhD
+
+```{r echo = F, warning = F, message=F}
+# Data wrangling
+
+RQ1 <- data %>% select(Q53, Q19.o, Q19.p) %>% # Selects gender and the questions for the self-efficacy score  
+  na.omit(data) %>%  # removes participants who did not answer questions 19o and 19p. 
+  mutate(id = row_number(), # creates id column based on the participant's row number. 
+         self_efficacy_score = (Q19.o + Q19.p)) %>% # creates the self-efficacy score
+  
+# Renames Variables
+  rename(gender = Q53) %>% 
+  mutate(gender = as.factor(gender),gender = dplyr::recode(gender, "Female (including trans female)" = "Female",
+                                          "Male (including trans male)" = "Male")) %>%
+
+# Filters out participants who preferred not to state their gender.   
+  filter(gender != "Prefer not to say") %>% 
+# Selects relevant columns
+  select(id, gender,self_efficacy_score) 
+  
+```
+
+```{r echo = F,, warning = F, message=F}
+# Descriptive Statistics
+ RQ1_descriptive_stats <- RQ1 %>% group_by(gender) %>% summarise(n=n()%>% round(1),
+                                            mean = mean(self_efficacy_score)%>% round(1),
+                                            sd = sd(self_efficacy_score)%>% round(1),
+                                            median = median(self_efficacy_score)%>% round(1),
+                                            stardard_error = sd(self_efficacy_score)/sqrt(n()),
+                                            upper95 = mean(self_efficacy_score) + (stardard_error * 1.96),
+                                            lower95 = mean(self_efficacy_score) - (stardard_error * 1.96)) %>%
+  mutate_at(vars("upper95", "lower95"), funs(round(., 1))) 
+
+                                            
+
+ RQ1_descriptive_stats <- RQ1_descriptive_stats %>% 
+ 
+# Calculates the percentage of each gender in the sample.   
+   mutate("% of sample" = n*100/sum(RQ1_descriptive_stats$n)) %>% 
+# Rounds the percentages to 1 decimal place. 
+   
+   mutate_at(vars("% of sample"), funs(round(., 1))) 
+
+Self.efficacy_descriptive_stats <- RQ1_descriptive_stats %>% select(gender, mean, sd, median, upper95, lower95) %>% rename("upper 95% CI" = "upper95", "lower 95% CI" = "lower95")
+```
+
+
+```{r fig.show='hide',echo=F}
+# Creates a qqplot to check for residual normality. 
+aov(self_efficacy_score ~ gender, data = RQ1) %>% plot(2)
+```
+
+```{r echo = F, warning = F, message=F}
+# if the qqplot shows a normal distribution assign "residual_normality" to 0, If the qqplot does not show a normal distribution assign it to 1. "residual_normality" is set to 1 by default. Ensure that 1 and 0 are numeric, not a character. 
+# The residual_normality is 1 because the qqplot shows that the residuals are not normally distributed. 
+residual_normality <- 1
+```
+
+
+```{r echo = F, warning = F, message=F}
+# checks for equal variance
+levene_test <- leveneTest(self_efficacy_score ~ gender, RQ1)
+levene_pvalue <- levene_test[1,3]
+
+# Assigns variance_check to 0 if the data has equal variance
+
+variance <- ifelse(levene_pvalue <= 0.05, 1,0)
+```
+
+
+```{r echo = F, warning = F, message=F, results = 'hide'}
+# Checks whether the parameters for a one-way ANOVA are met. The code runs the Kruskal-Wallice test if a single assumption is violated. Note that the assumptions are always assigned to 1 if they are violated.   
+ANOVA_check <- ifelse(variance + residual_normality== 0, "ANOVA", "KW")
+
+# Runs the tests
+
+# If you want to see what my code does if a one way ANOVA is used instead change "residual_normality" on line 95. 
+
+if(ANOVA_check == "ANOVA") {
+ res <- ezANOVA(data=RQ1, dv=self_efficacy_score, wid=id, between=gender) 
+ res <- res$ANOVA 
+res
+} 
+if(ANOVA_check == "KW"){
+ res <-  kruskal.test(self_efficacy_score ~ gender, data = RQ1)
+ res
+}
+```
+
+```{r echo = F, warning = F, message=F}
+# retrieves p value based on which test was used
+if(ANOVA_check == "ANOVA") {
+ p_value_RQ1 <- res$p
+ 
+} 
+if(ANOVA_check == "KW"){
+  p_value_RQ1 <- res$p.value %>% round(3)
+}
+```
+
+```{r echo = F, message = F, warning = F}
+# Does the write for a one-way ANOVA
+if(ANOVA_check == "ANOVA") {
+write_up1 <- paste(
+# F and degrees of freedom 
+  "F","(",res$DFn, ",", res$DFd, ")"," = ", 
+                   
+# F score
+                   res$F %>% round(2), 
+# Prints exact p-value if p >.001 to three decimal places. Prints "< .001" otherwise
+                   ", p", ifelse(res$p <= .001, paste(" <.001"), paste(" =", rd(res$p, digits = 3))), 
+                   
+# effect size. Prints exact ges if ges >.001. Prints <.001 otherwise.                    
+                   ", ges",ifelse(res$ges <= .001, paste(" <.001"), paste(" =", rd(res$ges, digits = 2))),sep="") 
+} 
+```
+
+```{r echo = F, warning = F, message=F}
+# Does the write up for the Kruskall-Wallice test
+if(ANOVA_check == "KW") {
+write_up1 <- paste("H", "(",res$parameter, ")", " = ", res$statistic %>% round(2), ", ", "p ",
+# prints p <.001 if p is less than not point .001. Prints exact p-value if p >.001                   
+                   ifelse(res$p.value <= .001, paste("<.001"), paste(" =", rd(res$p.value, digits = 3))),sep="")
+} 
+```
+
+```{r echo = F, message = F}
+# Conducts Dunn's test if the Kruskal-Wallice test was used and it came back significant. Used a bonferroni correction to adjust the p-values. 
+if(ANOVA_check == "KW" & p_value_RQ1 <= 0.05) {
+post_hoc <- dunnTest(self_efficacy_score ~ gender,
+         data=RQ1,
+         method="bonferroni")
+
+# changes the output to a data frame in order to print it in a table.
+
+post_hoc <- setDT(post_hoc$res) %>% 
+
+# rounds columns 
+  
+  mutate_at(vars("Z"), funs(round(., 2))) %>% 
+  mutate_at(vars("P.unadj", "P.adj"), funs(round(., 3)))
+}
+```
+
+```{r echo = F, message = F}
+# Conducts Tukey's test if a one-way anova was used and it came back significant. 
+if(ANOVA_check == "ANOVA" & p_value_RQ1 <= 0.05){
+
+  model <- aov(self_efficacy_score ~ gender, data = RQ1) 
+
+post_hoc <- TukeyHSD(model, conf.level=.95)
+
+# Converts the output to a data frame. 
+
+post_hoc <- as.data.frame(post_hoc$gender) %>% 
+  mutate_at(vars("lwr", "upr", "diff"), funs(round(., 2))) %>% 
+  mutate_at(vars("p adj"), funs(round(., 3))) %>%
+  rename("Lower 95% CI" = "lwr",
+         "Upper 95% CI" = "upr")
+  
+}
+```
+
+```{r echo = F, message = F}
+# automates the results write up up till the post-hoc. 
+qqplot_write_up <- ifelse(residual_normality == 0, "were", "were not")
+levene_write_up <- ifelse(variance == 0, "was", "was not")
+statistical_test <- ifelse(ANOVA_check=="ANOVA", "a one-way anova", "the Kruskal-Wallis test")
+p_value_1 <- ifelse(p_value_RQ1<=0.05, "significantly differed between at least two","did not significantly differ between")
+```
+
+<center>**Introduction**</center>
+
+
+<p style="line-height: 2em;"> 
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; First, we will investigate whether there is a relationship between gender and meeting/ conference self-efficacy. To do this, we will create a self-efficacy score using data from the “Nature Research Group PhD Student Survey 2019”. Due to previous research finding that self-efficacy is higher in female undergraduates than in male undergraduates (Sachitra and Bandara, 2017), we hypothesise that self-efficacy scores will significantly differ between at least two of the genders.
+<p> 
+
+<center>**Methods**</center>
+
+**Participants**
+
+<p style="line-height: 2em;"> 
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Our analysis consisted of `r sum(RQ1_descriptive_stats$n)` participants. There were `r RQ1_descriptive_stats[1, "n"]` females (`r RQ1_descriptive_stats[1, "% of sample"]`%), `r RQ1_descriptive_stats[3, "n"]` males (`r RQ1_descriptive_stats[3, "% of sample"]`%), and `r RQ1_descriptive_stats[2, "n"]` gender queer and non-binary people (`r RQ1_descriptive_stats[2, "% of sample"]`%). 
+<p> 
+
+**Design**
+
+<p style="line-height: 2em;"> 
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; A quasi-experimental design was used. The independent variable was gender (male, female, gender-queer/ non-binary). The dependent variable in this study was the PhD students' self-efficacy score. This ranged from zero to 14. Zero indicated the lowest conference/ meeting self-efficacy. Fourteen indicated the highest possible conference/ meeting self-efficacy. 
+<p> 
+
+**Procedure**
+
+<p style="line-height: 2em;"> 
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Question 53 collected the participants’ gender. This had four options: male, female, gender queer/ non-binary and prefer not to say. The self-efficacy score was created by adding scores for questions 19o and 19p. Question 19o asked the PhD students to rate their satisfaction with their ability to attend meetings and conferences. Question 19p asked them to rate their satisfaction with their ability to present research at conferences. Both ratings were on a seven-point scale where one was "Not at all satisfied" and seven was "Extremely satisfied". Participants who preferred not to state their gender or did not answer all three questions were removed from the analysis.
+<p>
+
+<center>**Results**</center>
+
+<p style="line-height: 2em;"> 
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;See Table 1 for a summary of the self-efficacy scores by gender and Figure 1 for a plot of self-efficacy scores by gender. Alpha was set at 0.05. A qqplot revealed that the residuals `r qqplot_write_up` normally distributed (see figure 2). Levene's test revealed that the variance between the groups `r levene_write_up` equal. Hence, `r statistical_test` was used. This revealed self-efficacy scores `r p_value_1` genders, `r write_up1`. These results suggest that gender does not influence PhD students' meeting and conference self-efficacy.   
+<p>
+
+**Table 1**
+
+*Summary of self-efficacy scores by gender*
+
+```{r echo = F}
+knitr::kable(
+  list(Self.efficacy_descriptive_stats),
+  booktabs = TRUE, valign = 't'
+) 
+```
+
+
+**Figure 1**
+
+*Violin box plot of self-efficacy scores by gender*
+
+```{r echo = F, message=F, echo = F}
+ggplot(RQ1, aes(y = self_efficacy_score, 
+			x = gender,
+			group = gender, fill = gender)) +
+		geom_violin() +
+		geom_boxplot(width=0.1) + 
+  scale_y_continuous(limits = c(0, 14), breaks = seq(0, 14, by = 2)) +
+  labs(x= "Gender", 
+		y= "Self-efficacy Score"
+		) + theme(legend.position="none")
+
+
+ 
+```
+<p style="line-height: 2em;"> 
+*Note*. The graph shows the PhD students' self-efficacy scores by gender. The box's middle lines represent the median self-efficacy scores (*Mdn*<sub>Female</sub> = `r RQ1_descriptive_stats[1, "median"]`, *Mdn*<sub>Gender-queer/ non binary</sub> = `r RQ1_descriptive_stats[2, "median"]`, *Mdn*<sub>Male</sub> = `r RQ1_descriptive_stats[3, "median"]`). The upper and lower limits represent the inter-quartile ranges. The vertical lines indicate the range. The violin plot shows the self-efficacy scores' underlying distribution. 
+<p>
+
+**Figure 2**
+
+*QQ-plot of the residuals*
+
+```{r echo = F, echo = F}
+aov(self_efficacy_score ~ gender, data = RQ1) %>% plot(2)
+```
+
+
+*Note*. The graph shows that the residuals `r ifelse(residual_normality == 0, "were", "were not")` normally distributed
+
+
+```{r message=F, echo=F, warning=F}
+# Helps automate the caption write up. Changes the caption of the post_hoc output based on the post-hoc test used. 
+post_hoc_test <- ifelse(ANOVA_check == "KW", paste("Dunn's post-hoc test output"), paste("Tukey's post-hoc test output"))
+```
+
+<b>`r if(p_value_RQ1 <= 0.05){paste("Table 2")}`</b>
+
+<i>`r if(p_value_RQ1 <= 0.05){paste(post_hoc_test)}`</i>
+
+
+
+```{r echo = F}
+# Prints the post hoc output based on the test and its significance. If the p value is not significant for the one-way ANOVA or the Kruskall Wallice test, the table will not print. The title "Table 2" and caption will not print if the main test is insignificant. 
+
+if(ANOVA_check =="KW" & p_value_RQ1 <= 0.05){
+
+knitr::kable(
+  list(post_hoc),
+  booktabs = TRUE, valign = 't'
+)
+
+} 
+if(ANOVA_check == "ANOVA"& p_value_RQ1 <= 0.05){
+
+knitr::kable(
+  list(post_hoc),
+  booktabs = TRUE, valign = 't'
+) 
+}
+```
+
+
+# Study 2: Gender and Bullying during a PhD
+
+```{r echo = F}
+# Wrangles the data
+ RQ2 <- data %>% select(Q53, Q28) %>% # selects the gender and bullying question
+  rename(gender = Q53, bullying = Q28) %>% # rename questions. 
+  na.omit(data) %>% # excluded NA responses
+    mutate(gender = dplyr::recode(gender, "Female (including trans female)" = "Female",
+                                          "Male (including trans male)" = "Male")) %>%
+  mutate(bullying = dplyr::recode(bullying, "No" = "not been bullied",
+                                          "Yes" = "been bullied")) %>%
+  filter(gender != "Prefer not to say") %>%
+  filter(bullying == "been bullied"|bullying == "not been bullied") 
+
+```
+
+```{r echo = F, warning = F, message = F}
+# Creates descriptive statistics
+
+
+# Calculates the number and percentage of each gender in the sample. 
+
+pinfo_RQ2 <-RQ2 %>%  count(gender) %>% 
+  
+  group_by(gender) %>% 
+  
+  mutate("% of sample" = n*100/nrow(RQ2)) 
+
+  # Calculates the number of each gender which has reported bullying. 
+
+ RQ2_descriptive_stats <- RQ2 %>%  group_by(gender, bullying) %>% 
+
+  
+  summarise(n_bullied = n()) %>% 
+  
+  filter(bullying == "been bullied") %>% select(gender, n_bullied) %>%
+   
+# Joins data frame with pinfo_RQ2. 
+  
+  inner_join(pinfo_RQ2, by = "gender") %>% ungroup() %>%
+  
+  # Calculates the percentage of each gender which has reported bullying
+  
+  group_by(gender) %>% mutate(percent_bullied = (n_bullied*100/n))  %>% 
+  
+  # Rounds columns to one decimal place. 
+  
+   mutate_at(vars("% of sample", "percent_bullied"), funs(round(., 1)))
+ 
+ 
+bullying_percentage_by_gender <- RQ2_descriptive_stats %>% select(gender, percent_bullied) %>% rename("percent bullied" = percent_bullied)
+```
+
+```{r echo = F, warning = F, message = F, results = 'hide'}
+# Conducts the 3x2 (gender x bullying experience) chi_squared test
+chi_square <- chisq.test(RQ2$gender, RQ2$bullying)
+chi_square
+```
+
+```{r echo = F, warning = F, message = F}
+# extracts the p value from the chi sqaured test
+p_value_RQ2 <- chi_square$p.value
+```
+
+
+```{r echo = F, warning = F, message = F}
+# Conducts 3 2x2 post-hoc chi-square tests comparing the likelihood each gender is to experience bullying against another if the 3x2 chi squared was significant. 
+
+if(p_value_RQ2 <= 0.05){
+  
+# Creates new data frames with 2 genders in each.   
+
+RQ2_male_female <- RQ2 %>% filter(gender != "Gender queer / Non binary")
+RQ2_male_queer <- RQ2 %>% filter(gender != "Female")
+RQ2_female_queer <- RQ2 %>% filter(gender != "Male")
+
+# Conducts the 3 2x2 post-hoc chi-square tests
+
+male_female <- chisq.test(RQ2_male_female$gender, RQ2_male_female$bullying, correct = TRUE)
+male_queer <- chisq.test(RQ2_male_queer$gender, RQ2_male_queer$bullying, correct = TRUE)
+female_queer <- chisq.test(RQ2_female_queer$gender, RQ2_female_queer$bullying, correct = TRUE)
+
+# Extracts the p-values from the post-hocs and places them into a vector
+p <- c(male_female$p.value,male_queer$p.value, female_queer$p.value)
+
+# adjusts the p values using bonferroni's correction 
+adjusted_p.values <- p.adjust(p, method = "bonferroni", n = length(p))
+
+#extracts the  adjusted p values
+p.adj.mf <-adjusted_p.values[1] %>% round(3)
+p.adj.mq <-adjusted_p.values[2] %>% round(3)
+p.adj.fq <-adjusted_p.values[3] %>% round(3)
+
+
+# Combines all the post hocs into one data frame
+
+mf <- tibble(pair = "male - female", "X-squared" = male_female$statistic %>% round(2), N = nrow(RQ2_male_female),df =  male_female$parameter,p = ifelse(p.adj.mf <= 0.001, "<.001", p.adj.mf))
+
+mq <- tibble(pair = "male - queer", "X-squared" = male_queer$statistic %>% round(2), N = nrow(RQ2_male_queer),df =  male_queer$parameter,p = ifelse(p.adj.mq <= 0.001, "<.001", p.adj.mq))
+
+fq <- tibble(pair = "female - queer", "X-squared" = female_queer$statistic %>% round(2), N = nrow(RQ2_female_queer),df =  female_queer$parameter,p = ifelse(p.adj.fq <= 0.001, "<.001", p.adj.fq))
+
+post_hoc2 <- rbind(mf, mq, fq)
+}
+```
+
+```{r echo = F}
+# automates the results write up up till the post-hoc. 
+chi_sqaure.write.up <- paste("(",chi_square$parameter, ","," N = ",sum(RQ2_descriptive_stats$n),")"," = ",chi_square$statistic %>% round(2),sep="")
+
+p_value_RQ2_write_up <- ifelse(chi_square$p.value <= .001, paste("<.001"), paste("=", rd(chi_square$p.value, digits = 3))) 
+
+p_value_2_write_up <- ifelse(p_value_RQ2<=0.05, "revealed", "did not reveal")
+```
+
+
+<center>**Introduction**</center>
+
+<p style="line-height: 2em;"> 
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;We will now investigate whether there is an association between gender and the likelihood of being bullied during a PhD. We hypothesise that there will be a significant association between gender and the likelihood to be bullied during a PhD due to previous research showing that women are more likely to be bullied than men in a medical setting (Averbuch et al., 2021).
+<p>
+
+
+<center>**Methods**</center>
+
+
+**Participants**
+
+<p style="line-height: 2em;"> 
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Our analysis consisted of `r sum(RQ2_descriptive_stats$n)` participants. There were `r RQ2_descriptive_stats[1, "n"]` females (`r RQ2_descriptive_stats[1, "% of sample"]`%), `r RQ2_descriptive_stats[3, "n"]` males (`r RQ2_descriptive_stats[3, "% of sample"]`%), and `r RQ2_descriptive_stats[2, "n"]` gender queer and non-binary people (`r RQ2_descriptive_stats[2, "% of sample"]`%). 
+<p>
+
+
+**Design**
+
+<p style="line-height: 2em;"> 
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; This study examined the association between gender (male, female, and non-binary/gender queer) and the likelihood of being bullied during a PhD ("been bullied" and "not been bullied"). 
+<p>
+
+**Procedure**
+
+<p style="line-height: 2em;"> 
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Question 53 collected the participants' gender. This had four options: "male", "female", "gender queer/ non-binary" and "prefer not to say". Question 28 was used to assess each gender's likelihood of being bullied. This question asked participants "Do you feel that you have experienced bullying in your PhD program?". This had three responses, "Yes", "No" and "prefer not to say". "Yes" was coded as "been bullied". "No" was coded as "not been bullied". Participants who picked "prefer not to say" for any of the questions or did not answer them were removed from the analysis.      
+<p>
+
+
+<center>**Results**</center>
+
+
+<p style="line-height: 2em;"> 
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`r ifelse(p_value_RQ1 <= 0.05, paste("Table 3"), paste("Table 2"))` displays the contingency table, and `r ifelse(p_value_RQ1 <= 0.05, paste("Table 4"), paste("Table 3"))` displays the percentage of each gender that reported being bullied during their PhD. Alpha was set to 0.05. A 3x2 chi-squared test `r p_value_2_write_up` a significant association between gender and the likelihood of reporting being bullied, *X*<sup>2</sup>`r chi_sqaure.write.up`, *p* `r p_value_RQ2_write_up`. As a result, three 2x2 post-hoc chi-squared tests were performed, directly comparing the likelihood of each gender reporting being bullied with another (see `r ifelse(p_value_RQ1 <= 0.05, paste("Table 5"), paste("Table 4"))`). A Bonferroni correction was used to adjust the p-values. The post-hoc tests revealed that females (`r RQ2_descriptive_stats[1, "percent_bullied"]`%) were significantly more likely to report being bullied than males (`r RQ2_descriptive_stats[3, "percent_bullied"]`%), *p* < .001. Gender queer/ non-binary people (`r RQ2_descriptive_stats[2, "percent_bullied"]`%) were no more likely to report being bullied than males (*p* = .184) or females (*p* = 1). Overall, this shows that there is a significant association between gender and the likelihood of being bullied during a PhD, where females are more likely to be bullied than males. This conclusion assumes that gender is not associated with the willingness to report a bullying experience as "prefer not to say responses" were filtered out. 
+<p>
+
+
+
+<b>`r ifelse(p_value_RQ1 <= 0.05, paste("Table 3"), paste("Table 2"))`</b>
+
+
+*Contingency table*
+
+```{r echo = F,}
+contingency_table <- table(RQ2$gender, RQ2$bullying)
+knitr::kable(
+  list(contingency_table),
+  booktabs = TRUE, valign = 't'
+) 
+```
+
+<b>`r ifelse(p_value_RQ1 <= 0.05, paste("Table 4"), paste("Table 3"))`</b>
+
+*Percentage of each gender that has reported a bullying experience*
+
+```{r echo = F}
+knitr::kable(
+  list(bullying_percentage_by_gender),
+  booktabs = TRUE, valign = 't'
+) 
+```
+
+<b>`r ifelse(p_value_RQ1 <= 0.05, paste("Table 5"), paste("Table 4"))`</b>
+
+*Post-hoc chi-square tests*
+
+```{r echo = F}
+if(p_value_RQ2 <= 0.05){
+  knitr::kable(
+  list(post_hoc2),
+  booktabs = TRUE, valign = 't'
+) }
+```
+
+
+
+<center>**Deviations from the pre-reg**</center>
+
+
+<p style="line-height: 2em;"> 
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; For studies 1 and 2, the p-values for the post-hocs are significant at p =< 0.05 instead of p < 0.05. I forgot to add the equal signs in the pre-registration. The mean and standard deviation of the sample's age are not included in either study. In the pre-registration, I assumed that the participants' ages would be continuous. The ages turned out to be categorical so the mean and standard deviations could not be calculated. For Study 1, the descriptive statistics table includes the mean, standard deviation, median, and confidence intervals by gender regardless of the test used. I decided to include all of the above to provide the reader with more information. Furthermore, the graph in Study 1 is a violin box plot instead of a box plot. I added the violin plot to display the underlying distribution. Before carrying out the analysis, I thought I would be able to add jitter to do so instead but there were too many data points for it to work. For study 2, "bullying experience" was changed to "likelihood of being bullied". The latter label was a better description of what I was measuring. The two refer to the same thing so Study 2's aim was not changed.
+<p>
+
+
+<center>**References**</center>
+
+
+<p style="line-height: 2em;"> 
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Arslan, G., Allen, K. A., & Tanhan, A. (2021). School bullying, mental health, and wellbeing in adolescents: Mediating impact of positive psychological orientations. *Child Indicators Research*, *14*(3), 1007-1026. https://doi.org/10.1007/s12187-020-09780-2
+<p>
+
+<p style="line-height: 2em;"> 
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Averbuch, T., Eliya, Y., & Van Spall, H. G. C. (2021). Systematic review of academic bullying in medical settings: dynamics and consequences. *BMJ open*, *11*(7), e043256. https://doi.org/10.1136/bmjopen-2020-043256
+<p>
+
+<p style="line-height: 2em;"> 
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Cattelino, E., Chirumbolo, A., Baiocco, R., Calandri, E., & Morelli, M. (2021). School achievement and depressive symptoms in adolescence: The role of self-efficacy and peer relationships at school. *Child Psychiatry & Human Development*, *52*(4), 571-578. https://doi.org/10.1007/s12187-020-09780-2
+<p>
+
+<p style="line-height: 2em;"> 
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Karademas, E. C. (2006). Self-efficacy, social support and well-being: The mediating role of optimism. *Personality and individual differences*, *40*(6), 1281-1290. https://doi.org/10.1016/j.paid.2005.10.019
+<p>
+
+<p style="line-height: 2em;"> 
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Milam, L. A., Cohen, G. L., Mueller, C., & Salles, A. (2019). The relationship between self-efficacy and well-being among surgical residents. *Journal of surgical education*, *76*(2), 321-328. https://doi.org/10.1016/j.jsurg.2018.07.028. https://doi.org/10.1016/
+<p> 
+
+<p style="line-height: 2em;"> 
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Sachitra, V., & Bandara, U. (2017). Measuring the academic self-efficacy of undergraduates: The role of gender and academic year experience. *World Academy of Science, Engineering and Technology*, *11*(11), 2320-2325.
+<p> 
+
+<p style="line-height: 2em;"> 
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Slade, M. (2010). Mental illness and well-being: the central importance of positive psychology and recovery approaches. *BMC health services research*, *10*(1), 1-14.
+<p> 
+
+<p style="line-height: 2em;"> 
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Thomas, H. J., Chan, G. C., Scott, J. G., Connor, J. P., Kelly, A. B., & Williams, J. (2016). Association of different forms of bullying victimisation with adolescents’ psychological distress and reduced emotional wellbeing. *Australian & New Zealand Journal of Psychiatry*, *50*(4), 371-379. https://doi.org/10.1177/0004867415600076
+<p> 
+
+
+
+
+
+
+
+
+

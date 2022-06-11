@@ -1,0 +1,202 @@
+---
+title: "project form"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### INSTRUCTIONS 
+* Fill out the form below (you do NOT need to include code chunks, just write in the white space).
+* The question numbers correspond with the items on the template.
+* SAVE this form with your Candidate number (4 letters + 1 number) and upload to Moodle
+
+
+
+<b> 1. Give your project a working title: </b>
+
+Gender and well-being during a PhD
+
+<b> 3a. State your research questions (no more than 2)</b>
+
+<u>Research Question 1:</u>
+
+* Is there a relationship between gender and meeting/ conference self-efficacy during a PhD?
+
+<u>Research Question 2:</u> 
+
+* Is there an association between gender and likelihood to be bullied during a PhD?
+
+
+<b> 3b. Describe the justification for your research questions.</b>
+
+Self-efficacy is linked to well-being. People with higher self-efficacy tend to have higher levels of well-being (Cattelino et al., 2021; Karademas, 2006; Milam et al., 2019). Previous research suggests that academic self-efficacy is higher in female undergraduates than in male undergraduates (Sachitra and Bandara, 2017). Thus, it is important to determine whether there is a gender difference in PhD students' self-efficacy to attend and present research at meetings and conferences. Bullying is also known to harm well-being (Arslan et al., 2021; Thomas et al., 2016). Previous research indicates that women are more likely to experience academic women than men in an medical setting (Averbuch et al., 2021). We want to know if this gender disparity generalises to PhD courses. Previous research into gender and well-being often fail to include gender queer and non-binary people so future research should take them into account.     
+
+
+
+<b>4. State the hypotheses associated with each research question (at least one per research Question)</b>
+
+<u>Research Question 1 (Hypothesis 1):</u>
+
+* At least two of the three groups’ (male, female, non-binary) self-efficacy scores will be significantly different. 
+
+<u>Research Question 2 (Hypothesis 2):</u>
+
+* Gender and likelihood to be bullied during a PhD will be significantly associated. 
+
+
+<b>11. Describe any planned manipulations of the variables that you are planning (e.g. responses you will exclude, any responses you will group together, any summary variables you will create from other variables)</b>
+
+
+<u>Research Question 1:</u>
+
+*	Self-efficacy score- summary variable
+    +	Will include Q19.o-p. 
+    +   Q19o = ability to attend meetings and conferences
+    +   Q19p = ability to present research at conferences
+    +	Remove NAs. 
+    +	Both questions are on a 7 point scale. 
+    +	1- Not at all satisfied. 7- Extremely satisfied. 
+    +	The participants’ score on both of the questions will be added. 
+    +	Scores will range from 0-14.
+    +	0= No conference/ meeting self-efficacy .  
+    +	14= highest possible conference/ meeting self-efficacy.  
+*	Gender 
+    +	Q53. 
+    +	Male, female, gender queer/ non-binary 
+    +	Remove prefer not to say. 
+    
+<u>Research Question 2:</u>
+
+*   Bullying experience:
+    +   Q28
+    +   Yes will be recoded into "been bullied".
+    +   No will be recoded into "not been bullied". 
+    +   Remove prefer not to say.
+*	Gender 
+    +	Q53. 
+    +	Male, female, gender queer/ non-binary 
+    +	Remove prefer not to say. 
+
+<b>12a. Describe the variables you will use (DV, IV) for each research question</b>
+
+<u>Research Question 1:</u>
+
+*	DV- self-efficacy score. 
+*	IV- gender (3 levels- male, female, non-binary/gender queer). 
+
+
+<u>Research Question 2:</u>
+
+*	2 categories. 3x2. 
+*	Category 1- gender, 3 levels (male, female, non-binary/gender queer).
+*	Category 2- Bullying experience, 2 levels (experienced bullying, has not experienced bullying)
+
+
+<b>12b. State which descriptive statistics you will include</b>	
+
+<u>Research Question 1:</u>
+
+*	Total number of participants.
+*	Mean and SD age of the entire sample. 
+*	N per group (male, female, non-binary). 
+*	Percentage of male, females and non-binary people. 
+
+
+If a one-way ANOVA is used:
+
+*	Mean and standard deviation of the self-efficacy score for each group. 
+
+If the Kruskal-Wallis test is used:
+
+*	Median self-efficacy score for each group. 
+
+<u>Research Question 2:</u>
+
+*	Total number of participants. 
+*	Mean and SD age of the entire sample.
+*	N per group (male, female, non-binary). 
+*	Percentage of male, females and non-binary people. 
+* % of each group (male, female, non-binary) which has experienced bullying. 
+
+
+<b>12c. State which graphs you will include (type of graph, which variables)</b>
+
+<u>Research Question 1:</u>
+
+*	Box plot to show self-efficacy scores across the groups. 
+    +	Y-axis: self-efficacy score. 
+    +	X-axis: gender. 3 groups (male, female, non-binary/ gender queer).
+* qqplot of the residuals for each factor. 
+    
+<u>Research Question 2:</u> 
+
+* No graph. 
+
+
+
+<b>19. State the analytic approach for each hypothesis (e.g. ANOVA, multiple regression, t-test) including details (e.g. one factor ANOVA with Pet as factor (3 levels), regression with model happiness ~ pet + gender + pet:gender interaction)</b>
+
+<u>Hypothesis 1:</u>
+
+Normality for the residuals for each factor will be assessed by plotting the residuals in a qqplot. 
+
+Equal group variance of the residuals will be checked with Levene’s test. 
+
+Normally distributed residuals for each level of the factor and equal group variance of the residuals:
+
+*	One-way ANOVA with gender as factor (3 levels- male, female, non-binary/ gender queer) and self-efficacy score as the DV. 
+*	If the p value is significant Tukey’s post-hoc test will be conducted. This will compare self-efficacy scores between:
+
+    1.	males and females
+    2.	males and non-binary/ gender queer
+    3.	females and non-bianry/ gender queer
+    
+Non-normally distributed residuals for each level of the factor or unequal variance of the residuals:
+
+*	Kruskal-Wallis test with gender as factor (3 levels- male, female, non-binary/ gender queer) and self-efficacy score as the DV. 
+*	If the p-value is significant Dunn’s test will be conducted. A Bonferroni correction will be used to adjust the p-values. This will compare self-efficacy scores  between
+
+    1.	males and females,
+    2.	males and non-binaries/ gender queers
+    3.	gender queers/ non-binaries and females
+    
+<u>Hypothesis 2:</u>
+
+* A 3x2 chi-squared test will be used. 
+
+* If the p-value for the chi-squared test is significant 3 post-hoc 2x2 chi-squared tests will be conducted. A Bonferroni correction will be used to adjust the p-values.  
+
+    1. Gender (male and female) x bullying experience (been bullied and not been bullied)
+    
+    2. Gender (male and non-binary/ gender queer) x bullying experience (been bullied and not been bullied)
+    
+    3. Gender (female and non-binary/ gender queer) x bullying experience (been bullied and not been bullied)
+
+
+<b>22. State the parameters you will report when you carry out your analysis and which criteria will you use to decide if the null hypothesis should be rejected (e.g. F-test, p-value, R2, coefficients, confidence intervals).</b>
+
+<u>Research Question 1:</u>
+
+*	For the one-way ANOVA the degrees of freedom, f statistic, p-value and Generalized Eta-Squared measure of effect size will be reported. Alpha will be set at 0.05. 
+*	For Tukey’s test the adjusted p-value and 95% confidence interval for each comparison will be reported. The adjusted p-values will be significant at p < .05. 
+*	For the Kruskal-Wallis test the degrees of freedom, Kruskal-Wallis H and p-value will be reported. Alpha will be set at 0.05. 
+*	For Dunn’s test the adjusted value for each comparison will be reported. The adjusted p-value will be significant at p < .05. 
+
+<u>Research Question 2:</u>
+
+*  For the 3x2 chi-squared test the χ2 , degrees of freedom and p-value will be reported. Alpha will be set at 0.05. 
+*  For the 3 2x2 tests the χ2 , degrees of freedom and adjusted p-value will be reported. Alpha for the adjusted p-values will be set at 0.05. 
+
+
+
+
+
+
+
+
+
+
+
+
