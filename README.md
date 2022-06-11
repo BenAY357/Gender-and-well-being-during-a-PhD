@@ -1,4 +1,4 @@
-<html>
+
 # Gender-and-well-being-during-a-PhD
 
 This project was my coursework for Intermediate Statistics. It scored 87.5. For our task, we were given the Nature Research Group PhD Student Survey 2019 and asked to pre-register and conduct a secondary analysis. I decided to investigate the relationship between gender and well-being during a PhD. Hence, my two research questions were:
@@ -22,4 +22,4 @@ For the full report click <i><u>[here](https://rpubs.com/BenAY/gender-well-being
 
 The data was very unbalanced. There were a lot more males and females than gender queer students. Future studies may want to recruit more gender queer participants. 
   
-</html>
+
