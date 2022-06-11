@@ -20,6 +20,6 @@ For the full report click <i><u>[here](https://rpubs.com/BenAY/gender-well-being
 
 <b>Limitations:</b>
 
-The data was very unbalanced. There were a lot more males and females than gender queer students. Future studies may want to recruit more gender queer participants. 
+The data was very unbalanced. There were a lot more males and females than gender queer students. Although an imbalance is unavoidable, future studies may want to recruit more gender queer participants to reduce the problem. 
   
 
